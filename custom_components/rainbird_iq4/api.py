@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import datetime
+import json
 import logging
 import threading
 import time
@@ -10,7 +11,7 @@ from typing import Any
 from curl_cffi import requests as cf_requests
 
 from .auth import RainBirdAuth
-from .const import API_BASE
+from .const import API_BASE, APPSYNC_URL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -372,3 +373,106 @@ class RainBirdAPI:
                 )
                 return []
             raise
+
+    # ── Cloud device state (AppSync GraphQL) ─────────────────────────────────
+    #
+    # Separate backend from everything above: not iq4server.rainbird.com, but
+    # an AWS AppSync GraphQL API the iq4.rainbird.com web portal itself calls
+    # for a handful of real-time device events the REST API never exposes.
+
+    _DEVICE_STATE_QUERY = (
+        "query getDeviceStateTable($PK: String, $SK: String) {\n"
+        "  getDeviceStateTable(PK: $PK, SK: $SK) {\n"
+        "    SK\n"
+        "    Data\n"
+        "    __typename\n"
+        "  }\n"
+        "}\n"
+    )
+
+    def get_device_state(self, device_uuid: str, sort_key: str) -> dict | None:
+        """Query one event key from the AppSync device-state table.
+
+        PK is the controller's deviceUUID (same value already returned by
+        GetSatellite/GetSatelliteList), SK is an event-name string such as
+        "Event#RainSensorState". Returns the parsed `Data` JSON object, or
+        None if there is no stored event for this PK/SK.
+
+        Retries once on 401 like the REST helpers above, but the auth header
+        here is the raw bearer token with no "Bearer " prefix — that's what
+        the web portal itself sends to this endpoint, and a prefixed token
+        is rejected.
+        """
+        session = self._session()
+        body = {
+            "operationName": "getDeviceStateTable",
+            "variables": {"PK": device_uuid, "SK": sort_key},
+            "query": self._DEVICE_STATE_QUERY,
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": self._auth.get_token(),
+        }
+
+        r = session.post(APPSYNC_URL, json=body, headers=headers, timeout=30)
+        if r.status_code == 401:
+            self._auth.invalidate()
+            headers["Authorization"] = self._auth.get_token()
+            r = session.post(APPSYNC_URL, json=body, headers=headers, timeout=30)
+        r.raise_for_status()
+
+        payload = r.json()
+        if payload.get("errors"):
+            _LOGGER.debug("getDeviceStateTable GraphQL errors: %s", payload["errors"])
+            return None
+
+        item = (payload.get("data") or {}).get("getDeviceStateTable")
+        raw_data = item.get("Data") if item else None
+        if not raw_data:
+            return None
+        try:
+            return json.loads(raw_data)
+        except (TypeError, ValueError):
+            _LOGGER.debug("getDeviceStateTable returned non-JSON Data: %r", raw_data)
+            return None
+
+    def get_rain_sensor_state(self, device_uuid: str) -> tuple[bool, int | None]:
+        """Return (available, state) for the WR2 rain sensor via AppSync.
+
+        Discovered against a controller where the REST Sensor endpoints
+        (GetSatellite / GetSensorListBySatelliteId) never report the WR2 as
+        a real sensor object at all — even while it is actively triggered
+        and the web portal shows "Local Sensor: Preventing". That badge is
+        populated from this endpoint instead.
+
+        state is 1 while wet was directly observed. Whether a dry sensor
+        reports state 0 or simply has no stored event yet (this method then
+        returns (True, None), which callers should treat as "not raining")
+        has not been confirmed — flag this if it turns out to be wrong.
+
+        available is False only when the call itself failed (network, auth,
+        or this AppSync app not provisioned for the account/region) — not
+        merely because there's no sensor. Callers should treat that as
+        "unknown", not "not raining".
+        """
+        if not device_uuid:
+            return False, None
+        try:
+            data = self.get_device_state(device_uuid, "Event#RainSensorState")
+        except cf_requests.RequestsError as e:
+            status = e.response.status_code if e.response is not None else None
+            _LOGGER.debug(
+                "Rain sensor AppSync query failed for device %s (HTTP %s): %s",
+                device_uuid, status, e,
+            )
+            return False, None
+        except Exception as e:  # noqa: BLE001 — must never take down config polling
+            _LOGGER.debug(
+                "Rain sensor AppSync query failed unexpectedly for device %s: %s",
+                device_uuid, e,
+            )
+            return False, None
+
+        if data is None:
+            return True, None
+        return True, data.get("state")

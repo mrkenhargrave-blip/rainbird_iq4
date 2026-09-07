@@ -21,6 +21,15 @@ DEFAULT_NAME = "Rain Bird IQ4"
 AUTH_BASE = "https://iq4server.rainbird.com/coreidentityserver"
 API_BASE = "https://iq4server.rainbird.com/coreapi/api"
 
+# Separate backend (AWS AppSync GraphQL, not the REST API above) that the
+# iq4.rainbird.com web portal itself queries for some real-time device
+# events. Currently known to carry: the WR2 rain sensor's live state, under
+# SK "Event#RainSensorState" — which the REST Sensor endpoints never expose,
+# even while the WR2 is actively triggered. Found via browser DevTools
+# traffic capture (community thread, 2026-09-07); reachable with the same
+# bearer token already used for the REST API, sent unprefixed (no "Bearer ").
+APPSYNC_URL = "https://m3iuhu3l3zbjpkctbnh2of4chm.appsync-api.us-west-2.amazonaws.com/graphql"
+
 # --- Web portal channel (isIQ) — the original/default login method ---
 # Implicit flow, same as the iq4.rainbird.com web portal. Token carries
 # isApp: false / isIQ: true. On US free-tier accounts this channel is
@@ -58,6 +67,7 @@ STATUS_PAUSED = "P"
 CONTROLLER_MODELS: dict[int, str] = {
     57: "ESP-ME3",
     69: "ESP-TM2",
+    71: "ESP-TM2 (Wi-Fi)",
 }
 
 

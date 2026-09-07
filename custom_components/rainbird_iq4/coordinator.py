@@ -436,11 +436,18 @@ class RainBirdConfigCoordinator(DataUpdateCoordinator):
                     "forecastPercentLimit": None,
                     "forecastInchesLimit":  None,
                     "forecastDelayDays":    None,
+                    "deviceUUID":           match.get("deviceUUID"),
                 }
             else:
                 raw = {}
 
         sensors = self.api.get_sensor_list(sid)
+
+        # deviceUUID lives at the top level on the GetSatelliteList shape
+        # (fallback above) but under "asset.uuid" on the full GetSatellite
+        # response — same value either way, just nested differently.
+        device_uuid = raw.get("deviceUUID") or (raw.get("asset") or {}).get("uuid")
+        rain_sensor_available, rain_sensor_state = self.api.get_rain_sensor_state(device_uuid)
 
         return {
             "satellite": {
@@ -474,6 +481,14 @@ class RainBirdConfigCoordinator(DataUpdateCoordinator):
                 }
                 for s in sensors
             ],
+            # Populated from a separate AppSync GraphQL API, not the REST
+            # sensor list above — see RainBirdAPI.get_rain_sensor_state.
+            # "available" False means the query itself failed (unknown
+            # state); it does not mean "no sensor"/"not raining".
+            "cloudRainSensor": {
+                "available": rain_sensor_available,
+                "state":     rain_sensor_state,
+            },
         }
 
 

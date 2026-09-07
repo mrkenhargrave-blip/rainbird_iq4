@@ -38,6 +38,16 @@ async def async_setup_entry(
         if sensor.get("type", -1) != -1:
             entities.append(RainBirdRainSensor(config_coordinator, sensor))
 
+    # Separate from the REST-reported sensor list above: some rain sensors
+    # (confirmed: the WR2 wireless receiver) never appear there at all, even
+    # while actively triggered, but their live state is queryable through a
+    # different backend (AppSync GraphQL) — see RainBirdCloudRainSensor.
+    # Added whenever that query is reachable for this controller, regardless
+    # of whether it currently has data, so the entity doesn't silently
+    # vanish just because it's dry when the integration starts up.
+    if config_coordinator.data.get("cloudRainSensor", {}).get("available"):
+        entities.append(RainBirdCloudRainSensor(config_coordinator))
+
     async_add_entities(entities)
 
 
@@ -235,3 +245,52 @@ class RainBirdRainSensor(CoordinatorEntity, BinarySensorEntity):
             "type":   sensor.get("typeName"),
             "active": sensor.get("active"),
         }
+
+
+class RainBirdCloudRainSensor(CoordinatorEntity, BinarySensorEntity):
+    """Binary sensor for a rain sensor (e.g. WR2) that the REST sensor list
+    never reports, sourced from a separate AppSync GraphQL API instead —
+    config polling.
+
+    GetSatellite / GetSensorListBySatelliteId report a WR2 receiver's SEN
+    terminal as the same "No Sensor Installed" placeholder used by
+    controllers with nothing wired at all, even while the WR2 is actively
+    triggered. The iq4.rainbird.com web portal's own "Local Sensor:
+    Preventing" badge does not come from either of those endpoints — it
+    comes from this one. See RainBirdAPI.get_rain_sensor_state for the
+    query and the open question about what a dry sensor reports.
+    """
+
+    def __init__(self, coordinator: RainBirdConfigCoordinator) -> None:
+        super().__init__(coordinator)
+        self._satellite_id = coordinator.satellite_id
+        satellite = coordinator.data.get("satellite", {}) if coordinator.data else {}
+        self._satellite_name = satellite.get("name", "Rain Bird IQ4")
+        self._attr_unique_id = f"{self._satellite_id}_cloud_rain_sensor"
+        self._attr_name = f"{self._satellite_name} Rain Sensor"
+        self._attr_device_class = BinarySensorDeviceClass.MOISTURE
+        self._attr_icon = "mdi:weather-pouring"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        satellite = self.coordinator.data.get("satellite", {}) if self.coordinator.data else {}
+        return DeviceInfo(
+            identifiers={(DOMAIN, str(self._satellite_id))},
+            name=self._satellite_name,
+            manufacturer="Rain Bird",
+            model=satellite.get("model", "Rain Bird IQ4"),
+            sw_version=satellite.get("version"),
+        )
+
+    def _cloud_sensor(self) -> dict:
+        return self.coordinator.data.get("cloudRainSensor", {}) if self.coordinator.data else {}
+
+    @property
+    def is_on(self) -> bool:
+        # No stored event is treated as "not currently wet" — unconfirmed,
+        # see the class/method docstrings.
+        return self._cloud_sensor().get("state") == 1
+
+    @property
+    def available(self) -> bool:
+        return super().available and bool(self._cloud_sensor().get("available"))
