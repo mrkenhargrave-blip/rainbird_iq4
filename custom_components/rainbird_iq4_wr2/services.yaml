@@ -9,7 +9,7 @@ start_zone:
       selector:
         entity:
           filter:
-            - integration: rainbird_iq4
+            - integration: rainbird_iq4_wr2
               domain: sensor
               device_class: enum
     duration:
@@ -36,7 +36,7 @@ start_program:
       selector:
         entity:
           filter:
-            - integration: rainbird_iq4
+            - integration: rainbird_iq4_wr2
               domain: sensor
               device_class: enum
 
@@ -51,7 +51,7 @@ stop_zone:
       selector:
         entity:
           filter:
-            - integration: rainbird_iq4
+            - integration: rainbird_iq4_wr2
               domain: sensor
               device_class: enum
 
@@ -66,7 +66,7 @@ stop_all_zones:
       selector:
         entity:
           filter:
-            - integration: rainbird_iq4
+            - integration: rainbird_iq4_wr2
               domain: binary_sensor
 
 set_rain_delay:
@@ -80,7 +80,7 @@ set_rain_delay:
       selector:
         entity:
           filter:
-            - integration: rainbird_iq4
+            - integration: rainbird_iq4_wr2
               domain: binary_sensor
     days:
       name: Days
@@ -106,7 +106,7 @@ enable_forecast_rain_delay:
       selector:
         entity:
           filter:
-            - integration: rainbird_iq4
+            - integration: rainbird_iq4_wr2
               domain: binary_sensor
     percent:
       name: Rain Probability Threshold
@@ -153,7 +153,7 @@ disable_forecast_rain_delay:
       selector:
         entity:
           filter:
-            - integration: rainbird_iq4
+            - integration: rainbird_iq4_wr2
               domain: binary_sensor
 
 set_weather_adjust_automatic:
@@ -167,7 +167,7 @@ set_weather_adjust_automatic:
       selector:
         entity:
           filter:
-            - integration: rainbird_iq4
+            - integration: rainbird_iq4_wr2
               domain: sensor
               device_class: enum
 
@@ -182,7 +182,7 @@ set_weather_adjust_manual:
       selector:
         entity:
           filter:
-            - integration: rainbird_iq4
+            - integration: rainbird_iq4_wr2
               domain: sensor
               device_class: enum
     seasonal_adjust:

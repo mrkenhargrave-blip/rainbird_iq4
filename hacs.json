@@ -1,8 +1,8 @@
 {
-  "name": "Rain Bird IQ4",
-  "domain": "rainbird_iq4",
-  "documentation": "https://github.com/davidsuarez82/rainbird_iq4",
-  "issue_tracker": "https://github.com/davidsuarez82/rainbird_iq4/issues",
-  "codeowners": ["@davidsuarez82"],
+  "name": "Rain Bird IQ4 (WR2 test)",
+  "domain": "rainbird_iq4_wr2",
+  "documentation": "https://github.com/mrkenhargrave-blip/rainbird_iq4/tree/wr2-rain-sensor-appsync",
+  "issue_tracker": "https://github.com/mrkenhargrave-blip/rainbird_iq4/issues",
+  "codeowners": ["@mrkenhargrave-blip"],
   "iot_class": "cloud_polling"
 }

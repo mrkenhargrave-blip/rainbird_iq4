@@ -332,7 +332,7 @@ class RainBirdAuth:
         key = f"{username.strip().lower()}|{channel}"
         account_hash = hashlib.sha256(key.encode()).hexdigest()[:12]
         self._cache_path = hass.config.path(
-            ".storage", f"rainbird_iq4_token_{account_hash}.json"
+            ".storage", f"rainbird_iq4_wr2_token_{account_hash}.json"
         )
 
     def _load_token_cache(self) -> None:

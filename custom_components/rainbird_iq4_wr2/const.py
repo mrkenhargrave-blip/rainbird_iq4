@@ -1,6 +1,6 @@
 """Constants for the Rain Bird IQ4 integration."""
 
-DOMAIN = "rainbird_iq4"
+DOMAIN = "rainbird_iq4_wr2"
 
 # Configuration keys
 CONF_USERNAME = "username"

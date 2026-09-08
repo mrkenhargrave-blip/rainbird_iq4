@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "Rain Bird IQ4",
+        "title": "Rain Bird IQ4 (WR2 test)",
         "description": "Enter your Rain Bird IQ4 cloud account credentials.",
         "data": {
           "username": "Email address or account name",

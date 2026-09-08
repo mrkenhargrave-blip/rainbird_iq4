@@ -1036,7 +1036,7 @@ class RainBirdIQ4Card extends HTMLElement {
     });
     this._render(true);
     if (station.mode === "sensor") {
-      this._callService("rainbird_iq4", "start_zone", {
+      this._callService("rainbird_iq4_wr2", "start_zone", {
         station_entity: station.entityId,
         duration,
       }, {
@@ -1056,7 +1056,7 @@ class RainBirdIQ4Card extends HTMLElement {
       });
       return;
     }
-    this._callService("rainbird_iq4", "start_station", {
+    this._callService("rainbird_iq4_wr2", "start_station", {
       station_id: Number(station.stationId),
       duration,
     }, {
@@ -1085,7 +1085,7 @@ class RainBirdIQ4Card extends HTMLElement {
     });
     this._render(true);
     if (station.mode === "sensor") {
-      this._callService("rainbird_iq4", "stop_zone", {
+      this._callService("rainbird_iq4_wr2", "stop_zone", {
         station_entity: station.entityId,
       }, {
         success: () => this._queueRefreshControllerById(station.controllerId, {
@@ -1095,7 +1095,7 @@ class RainBirdIQ4Card extends HTMLElement {
       });
       return;
     }
-    this._callService("rainbird_iq4", "stop_station", {
+    this._callService("rainbird_iq4_wr2", "stop_station", {
       station_id: Number(station.stationId),
     }, {
       success: () => this._queueRefreshControllerById(station.controllerId, {
