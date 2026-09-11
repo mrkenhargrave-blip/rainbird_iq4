@@ -445,10 +445,15 @@ class RainBirdAPI:
         and the web portal shows "Local Sensor: Preventing". That badge is
         populated from this endpoint instead.
 
-        state is 1 while wet was directly observed. Whether a dry sensor
-        reports state 0 or simply has no stored event yet (this method then
-        returns (True, None), which callers should treat as "not raining")
-        has not been confirmed — flag this if it turns out to be wrong.
+        state is 1 while wet, confirmed by direct observation, and the
+        entity built on this correctly read back "off"/Dry the next time
+        the controller's own sensor was dry — so treating "no state == not
+        raining" is confirmed correct in practice. Still open: whether a
+        dry sensor gets there via an explicit Data:{"state": 0} or simply
+        no stored event at all (this method returns (True, None) for the
+        latter) — either way callers should treat both as "not raining",
+        so it makes no behavioral difference, only left here for whoever
+        next needs the exact wire shape.
 
         available is False only when the call itself failed (network, auth,
         or this AppSync app not provisioned for the account/region) — not

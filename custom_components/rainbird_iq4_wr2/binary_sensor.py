@@ -258,7 +258,9 @@ class RainBirdCloudRainSensor(CoordinatorEntity, BinarySensorEntity):
     triggered. The iq4.rainbird.com web portal's own "Local Sensor:
     Preventing" badge does not come from either of those endpoints — it
     comes from this one. See RainBirdAPI.get_rain_sensor_state for the
-    query and the open question about what a dry sensor reports.
+    query. Confirmed correct against a live WR2 in both states: reads
+    "Wet" while raining and "Dry" once the controller's own sensor
+    cleared, on the same live Home Assistant instance.
     """
 
     def __init__(self, coordinator: RainBirdConfigCoordinator) -> None:
@@ -287,8 +289,8 @@ class RainBirdCloudRainSensor(CoordinatorEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool:
-        # No stored event is treated as "not currently wet" — unconfirmed,
-        # see the class/method docstrings.
+        # No stored event is treated as "not currently wet" — confirmed
+        # correct against a live dry WR2, see the class docstring.
         return self._cloud_sensor().get("state") == 1
 
     @property
